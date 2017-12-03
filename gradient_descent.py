@@ -60,7 +60,7 @@ class Vanilla(Operation):
         super().__init__()
         self.loss = loss
         if learning_rate is None:
-            learning_rate = 0.1
+            learning_rate = 0.001
         self.learning_rate = learning_rate
                 
 

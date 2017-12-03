@@ -3,7 +3,7 @@
 @author: Jean-Gabriel Simard
 """
 #import operations as op
-from operations import negative, reduce_sum, multiply, log, square, substract, inverse, add
+from operations import negative, reduce_sum, multiply, log, square, substract, inverse, add, absolute
 
 #for classification
 def cross_entropy(y_a, y):
@@ -17,3 +17,7 @@ def cross_entropy2(y_a, y):
 #for regression
 def l2(y_a, y):
     return reduce_sum(reduce_sum(square(substract(y_a, y))))
+
+
+def l0(y_a, y):
+    return reduce_sum(reduce_sum(absolute(substract(y_a, y))))

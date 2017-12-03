@@ -1,6 +1,13 @@
 # -*- coding: utf-8 -*-
 """
 @author: Jean-Gabriel Simard
+Contains the buiding blocks of the projects
+Graph = computational graph
+Node = node in computational graph 3 subclass
+Operation : computational node 
+Placeholer : input node
+Parameter : parameter node to be tuned with gradient descent
+
 """
 import numpy as np
 

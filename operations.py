@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 @author: Jean-Gabriel Simard
+
+Contains all possible operations that can be use to build a network
 """
 
 import numpy as np
@@ -48,8 +50,7 @@ class negative(Operation):
     
     def gradient(self, grad):
         return -grad
-    
-    
+       
 class inverse(Operation):
     """Returns 1-x element-wise.
     """
@@ -61,7 +62,20 @@ class inverse(Operation):
     
     def gradient(self, grad):
         return -grad
-        
+    
+class absolute(Operation):
+    """Computes the absolute value of x element-wise.
+    """
+
+    def __init__(self, x):
+        super().__init__([x])
+
+    def compute(self, x_value):
+        return np.absolute(x_value)
+    
+    def gradient(self, grad):
+        return np.sign(self.inputs)*grad
+       
 class matmul(Operation):
     """Multiplies matrix a by matrix b, producing a * b.
     """
@@ -83,7 +97,7 @@ class sigmoid(Operation):
         super().__init__([a])
 
     def compute(self, a_value):
-        return expit(np.clip( a_value, -1000, 1000 ))
+        return expit(np.clip( a_value, -1000, 1000 )) #clip to get rid of nan values
     
     def gradient(self, grad):
         return grad * self.output * (1 - self.output)
@@ -112,7 +126,7 @@ class log(Operation):
         return np.log(x_value)
     
     def gradient(self, grad):
-        return grad/self.inputs
+        return grad/(self.inputs)
 
 
 class multiply(Operation):
@@ -126,10 +140,6 @@ class multiply(Operation):
         return x_value * y_value
     
     def gradient(self, grad):
-#        print(self.inputs[0].shape, self.inputs[1].shape)
-#        print(grad.shape)
-#        grad * self.inputs[1]
-#        grad * self.inputs[0]
         return [grad * self.inputs[1], grad * self.inputs[0]]
  
     
@@ -155,7 +165,7 @@ class reduce_sum(Operation):
 
 
 class square(Operation):
-    """Computes the square of x element-wise.
+    """Computes x**2 element-wise.
     """
 
     def __init__(self, x):
