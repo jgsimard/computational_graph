@@ -19,13 +19,13 @@ class Node:
     def __init__(self):
         self.inputs = []
         self.output = []
+        self.consumers = []
         pass
 
 class Operation(Node):
     def __init__(self,  input_nodes=[]):
         super().__init__()
         self.input_nodes = input_nodes
-        self.consumers = []
 
         for input_node in input_nodes:
             input_node.consumers.append(self)
@@ -44,17 +44,13 @@ class Placeholder(Node):
 
     def __init__(self):
         super().__init__()
-        self.consumers = []
         self.graph.placeholders.append(self)
 
 class Parameter(Node):
-
     def __init__(self, initial_value=None):
         super().__init__()
         self.value = initial_value
-        self.consumers = []
         self.graph.parameters.append(self)
-        
         
 class Session:
     """Represents execution of computational graph.
@@ -112,6 +108,7 @@ def traverse_postorder(operations):
     
     nodes_postorder, temp = [], []
     
+    #take biggest graph
     for operation in operations:
         recurse(operation, temp)
         if len(temp) > len (nodes_postorder):

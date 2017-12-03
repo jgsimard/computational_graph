@@ -36,7 +36,32 @@ class substract(add):
         yp = negative(y)
         super(add,self).__init__([x, yp])
 
+class negative(Operation):
+    """Computes the negative of x element-wise.
+    """
+
+    def __init__(self, x):
+        super().__init__([x])
+
+    def compute(self, x_value):
+        return -x_value
     
+    def gradient(self, grad):
+        return -grad
+    
+    
+class inverse(Operation):
+    """Returns 1-x element-wise.
+    """
+    def __init__(self, x):
+        super().__init__([x])
+    
+    def compute(self, x_value):
+        return 1 - x_value
+    
+    def gradient(self, grad):
+        return -grad
+        
 class matmul(Operation):
     """Multiplies matrix a by matrix b, producing a * b.
     """
@@ -101,6 +126,10 @@ class multiply(Operation):
         return x_value * y_value
     
     def gradient(self, grad):
+#        print(self.inputs[0].shape, self.inputs[1].shape)
+#        print(grad.shape)
+#        grad * self.inputs[1]
+#        grad * self.inputs[0]
         return [grad * self.inputs[1], grad * self.inputs[0]]
  
     
@@ -124,19 +153,6 @@ class reduce_sum(Operation):
         grad = np.reshape(grad, output_shape)
         return np.tile(grad, tile_scaling)
 
-    
-class negative(Operation):
-    """Computes the negative of x element-wise.
-    """
-
-    def __init__(self, x):
-        super().__init__([x])
-
-    def compute(self, x_value):
-        return -x_value
-    
-    def gradient(self, grad):
-        return -grad
 
 class square(Operation):
     """Computes the square of x element-wise.
