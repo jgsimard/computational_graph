@@ -7,6 +7,8 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import re
 import itertools
+import graphviz
+import graph
 
 def col (offset, N, noise = 1.0):
     return noise*np.random.randn(N) + offset * np.ones((N))
@@ -68,23 +70,23 @@ def mesh(x0, x1, y0, y1):
 
 
 def draw_graph(g):
-    G = nx.Graph()
+    dot = graphviz.Digraph(comment='The Round Table')
+    
     for parameter in g.parameters:
-        G.add_node(parameter, name= 'param', idd = hex(id(parameter)))
+        dot.node(str(id(parameter)), 'param')
         
     for placeholder in g.placeholders:
-        G.add_node(placeholder, name = 'placeholder', idd = hex(id(placeholder)))
+        dot.node(str(id(placeholder)), 'placeholder')
         
     for op in g.operations:
-        
-        G.add_node(op, name= 'op : ' +  re.findall(r"'\s*([^']+?)\s*'", str(op.__class__))[0], idd = hex(id(op)))
+        dot.node(str(id(op)), re.findall(r"'\s*([^']+?)\s*'", str(op.__class__))[0][11:])
         
         for input_node in op.input_nodes:
-            G.add_edge(op,input_node)
+            if not isinstance(input_node,graph.Operation):
+                dot.edge(str(id(input_node)), str(id(op)))
         
         for consumer in op.consumers:
-            G.add_edge(op,consumer)
+            dot.edge(str(id(op)), str(id(consumer)))
             
-    labels=dict((n,d['name']) for n,d in G.nodes(data=True))       
-    nx.draw(G,labels=labels)
-    plt.show()
+    
+    dot.render('cp_graph', view=True)
