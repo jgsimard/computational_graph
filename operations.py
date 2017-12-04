@@ -2,7 +2,7 @@
 """
 @author: Jean-Gabriel Simard
 
-Contains all possible operations that can be use to build a network
+Contains operations that can be used to build a network
 """
 
 import numpy as np
@@ -97,7 +97,7 @@ class sigmoid(Operation):
         super().__init__([a])
 
     def compute(self, a_value):
-        return expit(np.clip( a_value, -1000, 1000 )) #clip to get rid of nan values
+        return expit(np.clip( a_value, -5000, 5000 )) #clip to get rid of nan values
     
     def gradient(self, grad):
         return grad * self.output * (1 - self.output)
@@ -123,10 +123,11 @@ class log(Operation):
         super().__init__([x])
     
     def compute(self, x_value):
+#        return np.log(np.clip(x_value,10**-5,None))
         return np.log(x_value)
     
     def gradient(self, grad):
-        return grad/(self.inputs)
+        return grad/(self.inputs[0])
 
 
 class multiply(Operation):

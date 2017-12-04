@@ -27,7 +27,6 @@ class Node:
         self.inputs = []
         self.output = []
         self.consumers = []
-        pass
 
 class Operation(Node):
     def __init__(self,  input_nodes=[]):

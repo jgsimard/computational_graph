@@ -62,14 +62,12 @@ class Vanilla(Operation):
         if learning_rate is None:
             learning_rate = 0.001
         self.learning_rate = learning_rate
-                
 
     def compute(self):
         grad_table = compute_gradients(self.loss)
         for node in grad_table:
             if type(node) == Parameter:
-                grad = grad_table[node]
-                node.value -= self.learning_rate * np.mean(grad,axis = 0)
+                node.value -= self.learning_rate * np.mean(grad_table[node],axis = 0)
                 
 
 class Momentum(Operation):
@@ -94,10 +92,10 @@ class Momentum(Operation):
         for node in grad_table:
             if type(node) == Parameter:
                 if node in self.past_grad:
-                    self.past_grad[node] *=self.gamma
+                    self.past_grad[node] *= self.gamma
                     self.past_grad[node] += self.learning_rate *  np.mean(grad_table[node], axis = 0)
                 else:
-                    self.past_grad[node] = self.learning_rate *  np.mean(grad_table[node], axis = 0)
+                    self.past_grad[node] = self.learning_rate * np.mean(grad_table[node], axis = 0)
                 node.value -= self.past_grad[node]
                 
  
@@ -135,10 +133,36 @@ class Nesterov(Operation):
                     self.past_grad[node] *=self.gamma
                     self.past_grad[node] += self.learning_rate *  np.mean(grad_table[node], axis = 0)
                     node.value -= self.past_grad[node]
+ 
+class Adagrad(Operation):
+    
+    def __init__(self, loss, learning_rate = None, gamma = None):
+        super().__init__()
+        self.loss = loss
+        
+        if learning_rate is None:
+            learning_rate = 0.001
+        self.learning_rate = learning_rate
+        
+        self.past_grad = {}
+        
+    def compute(self):
+        if self.past_grad == {}:
+            grad_table = compute_gradients(self.loss)
+            for node in grad_table:
+                if type(node) == Parameter:
+                    self.past_grad[node] = np.square(np.mean(grad_table[node], axis = 0))
+#                    node.value -= self.past_grad[node]   
+        else:
+            grad_table = compute_gradients(self.loss)
             
-            
+            for node in grad_table:
+                if type(node) == Parameter:
+                    node.value -= self.learning_rate + (1/(np.sqrt(self.past_grad[node]) + 10**-8)) * np.mean(grad_table[node], axis = 0)
+                    self.past_grad[node] += np.square(np.mean(grad_table[node], axis = 0))
+      
+        
                 
-                
-                
+                                
                 
                 
