@@ -3,19 +3,18 @@
 @author: Jean-Gabriel Simard
 """
 #import operations as op
-from operations import negative, reduce_sum, multiply, log, square, substract, inverse, add, absolute
+from operations import reduce_sum, log, absolute
 
 #for classification
-def cross_entropy(y_a, y):
-    return negative(reduce_sum(multiply(y, log(y_a))))
+def cross_entropy(y_estimated, y):
+    return -reduce_sum(y * log(y_estimated))
 
-def cross_entropy2(y_a, y):
-    return negative(reduce_sum(add(multiply(y, log(y_a)), multiply(inverse(y), log(inverse(y_a))))))
+def cross_entropy2(y_estimated, y):
+    return -reduce_sum(y * log(y_estimated) + (~y) * log(~y_estimated))
 
 #for regression
-def l2(y_a, y):
-    return reduce_sum(square(substract(y_a, y)))
+def l2(y_estimated, y):
+    return reduce_sum((y_estimated - y)**2)
 
-
-def l0(y_a, y):
-    return reduce_sum(absolute(substract(y_a, y)))
+def l1(y_estimated, y):
+    return reduce_sum(absolute(y_estimated - y))

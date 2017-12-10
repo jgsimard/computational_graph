@@ -6,7 +6,7 @@ Graph = computational graph
 Node = node in computational graph 3 subclass
 Operation : computational node 
 Placeholer : input node
-Parameter : parameter node to be tuned with gradient descent
+Parameter : parameter node to be tuned with gradient descent (weights)
 
 """
 import numpy as np
@@ -21,12 +21,13 @@ class Graph:
         self.parameters   = []
         
 class Node:
-    graph = Graph()
+    graph = Graph() #is commun to all nodes
     
     def __init__(self):
         self.inputs = []
         self.output = []
         self.consumers = []
+        self.name = None
 
 class Operation(Node):
     def __init__(self,  input_nodes=[]):
@@ -37,7 +38,8 @@ class Operation(Node):
             input_node.consumers.append(self)
 
         self.graph.operations.append(self)
-
+    
+    #must be implemented by subclass
     def compute(self):
         pass
     def gradient(self):
@@ -48,13 +50,15 @@ class Placeholder(Node):
        when computing the output of a computational graph
     """
 
-    def __init__(self):
+    def __init__(self, name = None):
         super().__init__()
+        self.name = name
         self.graph.placeholders.append(self)
 
 class Parameter(Node):
-    def __init__(self, initial_value=None):
+    def __init__(self, initial_value=None, name = None):
         super().__init__()
+        self.name = name
         self.value = initial_value
         self.graph.parameters.append(self)
         
@@ -95,6 +99,8 @@ class Session:
                 node.output = np.array(node.output)
 
         # Return the requested node value
+        if type(operations) != list:
+            return operations.output
         return [operation.output for operation in operations]
 
 
@@ -113,11 +119,13 @@ def traverse_postorder(operations):
         list_to_fill.append(node)
     
     nodes_postorder, temp = [], []
-    
-    #take biggest graph
-    for operation in operations:
-        recurse(operation, temp)
-        if len(temp) > len (nodes_postorder):
-            nodes_postorder = temp
+    if isinstance(operations, Node):
+        recurse(operations, nodes_postorder)
+    else:
+        #take biggest graph
+        for operation in operations:
+            recurse(operation, temp)
+            if len(temp) > len (nodes_postorder):
+                nodes_postorder = temp
     
     return nodes_postorder

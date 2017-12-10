@@ -54,14 +54,21 @@ def compute_gradients(loss):
     # Return gradients for each visited node
     return grad_table
 
-class Vanilla(Operation):
+class Gradient_Descent(Operation):
     
     def __init__(self, loss, learning_rate = None):
         super().__init__()
         self.loss = loss
+        
         if learning_rate is None:
             learning_rate = 0.001
         self.learning_rate = learning_rate
+
+class Vanilla(Gradient_Descent):
+    
+    def __init__(self, loss, learning_rate = None):
+        super().__init__(loss, learning_rate)
+        self.name = 'Vanilla gradient descent'
 
     def compute(self):
         grad_table = compute_gradients(self.loss)
@@ -69,16 +76,12 @@ class Vanilla(Operation):
             if type(node) == Parameter:
                 node.value -= self.learning_rate * np.mean(grad_table[node],axis = 0)
                 
-
-class Momentum(Operation):
+class Momentum(Gradient_Descent):
     
     def __init__(self, loss, learning_rate = None, gamma = None):
-        super().__init__()
-        self.loss = loss
-        
-        if learning_rate is None:
-            learning_rate = 0.001
-        self.learning_rate = learning_rate
+        super().__init__(loss, learning_rate)
+        self.name = 'Momentum gradient descent'
+
         
         if gamma is None:
             gamma = 0.5
@@ -98,16 +101,11 @@ class Momentum(Operation):
                     self.past_grad[node] = self.learning_rate * np.mean(grad_table[node], axis = 0)
                 node.value -= self.past_grad[node]
                 
- 
-class Nesterov(Operation):
+class Nesterov(Gradient_Descent):
     
     def __init__(self, loss, learning_rate = None, gamma = None):
-        super().__init__()
-        self.loss = loss
-        
-        if learning_rate is None:
-            learning_rate = 0.001
-        self.learning_rate = learning_rate
+        super().__init__(loss, learning_rate)
+        self.name = 'Nesterov gradient descent'
         
         if gamma is None:
             gamma = 0.5
@@ -134,15 +132,11 @@ class Nesterov(Operation):
                     self.past_grad[node] += self.learning_rate *  np.mean(grad_table[node], axis = 0)
                     node.value -= self.past_grad[node]
  
-class Adagrad(Operation):
+class Adagrad(Gradient_Descent):
     
     def __init__(self, loss, learning_rate = None, gamma = None):
-        super().__init__()
-        self.loss = loss
-        
-        if learning_rate is None:
-            learning_rate = 0.001
-        self.learning_rate = learning_rate
+        super().__init__(loss, learning_rate)
+        self.name = 'Adagrad gradient descent'
         
         self.past_grad = {}
         
@@ -160,9 +154,3 @@ class Adagrad(Operation):
                 if type(node) == Parameter:
                     node.value -= self.learning_rate + (1/(np.sqrt(self.past_grad[node]) + 10**-8)) * np.mean(grad_table[node], axis = 0)
                     self.past_grad[node] += np.square(np.mean(grad_table[node], axis = 0))
-      
-        
-                
-                                
-                
-                
