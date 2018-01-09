@@ -3,15 +3,12 @@
 @author: Jean-Gabriel Simard
 """
 
-from graph import Operation, Parameter, Placeholder
+from core.graph import Operation, Parameter, Placeholder
 from queue import Queue
 import numpy as np
-
 def compute_gradients(loss):
-    # grad_table[node] will contain the gradient of the loss w.r.t. the node's output
+    # grad_table[node] = gradient of the loss w.r.t. the node's output
     grad_table = {}
-
-    # The gradient of the loss with respect to the loss is just 1
     grad_table[loss] = 1
 
     # breadth-first search, backwards from the loss
@@ -26,43 +23,39 @@ def compute_gradients(loss):
         # Append each input node to the queue
         if isinstance(node, Operation):
             for input_node in node.input_nodes:
-                if not input_node in visited:
+                if input_node not in visited:
                     visited.add(input_node)
                     queue.put(input_node)
-
+        
+        #compute grad of a node wrt to the loss
         if node != loss:
-            # Compute the gradient of the loss with respect to this node's output
             grad_table[node] = 0
             
             if not isinstance(node, Placeholder): 
-                try:
-                    for consumer in node.consumers:  
+                for consumer in node.consumers: 
+                    if consumer in grad_table:
                         loss_grads_wrt_consumer_inputs = consumer.gradient(grad_table[consumer])
-                        
                         if len(consumer.input_nodes) == 1: 
-                            # If 1 input node, lossgrads_wrt_consumer_inputs == scalar
                             grad_table[node] += loss_grads_wrt_consumer_inputs
-        
                         else:
-                            # lossgrads_wrt_consumer_inputs == array 
-                            # Get the gradient of the loss with respect to node
-                            
                             grad_table[node] += loss_grads_wrt_consumer_inputs[consumer.input_nodes.index(node)]
-                except: #if there is a loop, it might look for nodes that are not yet in grad_table
-                    pass
 
     # Return gradients for each visited node
     return grad_table
 
 class Gradient_Descent(Operation):
     
-    def __init__(self, loss, learning_rate = None):
+    def __init__(self, loss, learning_rate = None, decay = None ):
         super().__init__()
         self.loss = loss
         
         if learning_rate is None:
             learning_rate = 0.001
         self.learning_rate = learning_rate
+        
+        if decay is None:
+            decay = 0.9999
+        self.decay = decay
 
 class Vanilla(Gradient_Descent):
     
@@ -75,13 +68,13 @@ class Vanilla(Gradient_Descent):
         for node in grad_table:
             if type(node) == Parameter:
                 node.value -= self.learning_rate * np.mean(grad_table[node],axis = 0)
+        self.learning_rate *= self.decay
                 
 class Momentum(Gradient_Descent):
     
     def __init__(self, loss, learning_rate = None, gamma = None):
         super().__init__(loss, learning_rate)
         self.name = 'Momentum gradient descent'
-
         
         if gamma is None:
             gamma = 0.5
@@ -96,10 +89,11 @@ class Momentum(Gradient_Descent):
             if type(node) == Parameter:
                 if node in self.past_grad:
                     self.past_grad[node] *= self.gamma
-                    self.past_grad[node] += self.learning_rate *  np.mean(grad_table[node], axis = 0)
+                    self.past_grad[node] += self.learning_rate * np.mean(grad_table[node], axis = 0)
                 else:
-                    self.past_grad[node] = self.learning_rate * np.mean(grad_table[node], axis = 0)
+                    self.past_grad[node]  = self.learning_rate * np.mean(grad_table[node], axis = 0)
                 node.value -= self.past_grad[node]
+        self.learning_rate *= self.decay
                 
 class Nesterov(Gradient_Descent):
     
@@ -128,8 +122,8 @@ class Nesterov(Gradient_Descent):
             
             for node in grad_table:
                 if type(node) == Parameter:
-                    self.past_grad[node] *=self.gamma
-                    self.past_grad[node] += self.learning_rate *  np.mean(grad_table[node], axis = 0)
+                    self.past_grad[node] *= self.gamma
+                    self.past_grad[node] += self.learning_rate * np.mean(grad_table[node], axis = 0)
                     node.value -= self.past_grad[node]
  
 class Adagrad(Gradient_Descent):

@@ -6,15 +6,7 @@ Created on Sun Dec 10 02:41:51 2017
 """
 
 import numpy as np
-import matplotlib.pyplot as plt
-import graph, loss, layers, gradient_descent, utils, operations
-from graph import Operation
-
-
-
-def rel_error(x, y):
-    """ returns relative error """
-    return np.max(np.abs(x - y) / (np.maximum(1e-8, np.abs(x) + np.abs(y))))   
+from core import graph, operations, utils
 
 x_shape = (2, 3, 4, 4)
 w_shape = (3, 3, 4, 4)
@@ -26,12 +18,7 @@ X = graph.Placeholder(name = 'inputs') #to feed with attributes
 W = graph.Parameter(w)
 B = graph.Parameter(b)
 
-#def __init__(self, x, channel_in, channel_out, kernel_shape = None, padding = 1, stride = 1):
-#op = operations.convolution(X,W,stride = 2, padding = 1)
-#out = op + B
-
 op = operations.Convolution(X,W,B, stride = 2)
-#out, cache = conv_forward(x, w, b, stride=2, padding=1)
 
 #utils.draw_graph(op.graph)
 
@@ -51,5 +38,4 @@ correct_out = np.array([[[[-0.08759809, -0.10987781],
 session = graph.Session()
 session.run(op,{X: x})
 
-#print(rel_error(correct_out,op.output))
-
+print(utils.rel_error(correct_out,op.output))

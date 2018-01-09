@@ -6,10 +6,10 @@ Contains operations that can be used to build a network
 """
 
 import numpy as np
-from graph import Operation, Node
+from core.graph import Operation, Node
 from scipy.special import expit
     
-class add(Operation):
+class Add(Operation):
     """Computes x + y element-wise.
     """
     def __init__(self, x, y):
@@ -22,14 +22,7 @@ class add(Operation):
     def gradient(self,  grad):
         return [grad, grad]
     
-class substract(add):
-    """Returns x - y element-wise.
-    """
-    def __init__(self, x, y):
-        super().__init__(x, negative(y))
-        self.name = 'Substract'
-
-class negative(Operation):
+class Negative(Operation):
     """Computes the negative of x element-wise.
     """
 
@@ -43,12 +36,12 @@ class negative(Operation):
     def gradient(self, grad):
         return -grad
        
-class inverse(Operation):
+class Inverse(Operation):
     """Returns 1-x element-wise.
     """
     def __init__(self, x):
         super().__init__([x])
-        self.name = 'inverse'
+        self.name = 'Inverse'
     
     def compute(self, x_value):
         return 1 - x_value
@@ -56,7 +49,7 @@ class inverse(Operation):
     def gradient(self, grad):
         return -grad
     
-class absolute(Operation):
+class Absolute(Operation):
     """Computes the absolute value of x element-wise.
     """
 
@@ -68,9 +61,9 @@ class absolute(Operation):
         return np.absolute(x_value)
     
     def gradient(self, grad):
-        return np.sign(self.inputs)*grad
+        return np.sign(self.input_nodes[0].output)*grad
        
-class matmul(Operation):
+class Matmul(Operation):
     """Multiplies matrix a by matrix b, producing a * b.
     """
 
@@ -82,9 +75,9 @@ class matmul(Operation):
         return a_value.dot(b_value)
     
     def gradient(self, grad):
-        return [grad.dot(self.inputs[1].T), self.inputs[0].T.dot(grad)]
+        return [grad.dot(self.input_nodes[1].output.T), self.input_nodes[0].output.T.dot(grad)]
     
-class sigmoid(Operation):
+class Sigmoid(Operation):
     """Returns the sigmoid(1 / (1 + exp(-x))  of x element-wise.
     """
 
@@ -98,7 +91,7 @@ class sigmoid(Operation):
     def gradient(self, grad):
         return grad * self.output * (1 - self.output)
 
-class softmax(Operation):
+class Softmax(Operation):
     """Returns the softmax of a.
     """
 
@@ -112,7 +105,7 @@ class softmax(Operation):
     def gradient(self, grad):
         return (grad - np.expand_dims(np.sum(grad * self.output, -1), axis = -1 )) * self.output  
     
-class log(Operation):
+class Log(Operation):
     """Computes the natural logarithm of x element-wise.
     """
     
@@ -124,10 +117,10 @@ class log(Operation):
         return np.log(x_value)
     
     def gradient(self, grad):
-        return grad/self.inputs[0]
+        return grad/self.input_nodes[0].output
 
 
-class multiply(Operation):
+class Multiply(Operation):
     """Returns x * y element-wise.
     """
 
@@ -139,10 +132,10 @@ class multiply(Operation):
         return x_value * y_value
     
     def gradient(self, grad):
-        return [grad * self.inputs[1], grad * self.inputs[0]]
+        return [grad * self.input_nodes[1].output, grad * self.input_nodes[0].output]
  
     
-class reduce_sum(Operation):
+class Reduce_sum(Operation):
     """Computes the sum of elements across dimensions of a tensor.
     """
 
@@ -156,14 +149,16 @@ class reduce_sum(Operation):
     
     def gradient(self, grad):
         
-        A = self.inputs[0]       
+        A = self.input_nodes[0].output       
         output_shape = np.array(A.shape)
         output_shape[self.axis] = 1
         tile_scaling = A.shape // output_shape
         grad = np.reshape(grad, output_shape)
         return np.tile(grad, tile_scaling)
 
-class pow_op(Operation):
+class Pow_op(Operation):
+    """Computes element wise exponentiation
+    """
     def __init__(self, x, y):
         super().__init__([x])
         self.exponent = y
@@ -173,17 +168,17 @@ class pow_op(Operation):
         return np.power(x_value, self.exponent)
     
     def gradient(self, grad):
-        return self.exponent * self.inputs[0] * grad
+        return self.exponent * self.input_nodes[0].output * grad
     
-class square(pow_op):
+class Square(Pow_op):
     """Computes x**2 element-wise.
     """
     def __init__(self, x):
         super().__init__(x,2.0)
         self.name = 'Square'
         
-class leaky_relu(Operation):
-    """Computes max(ax,x) element-wise. element-wise.
+class Leaky_relu(Operation):
+    """Computes max(ax,x) element-wise.
     """
 
     def __init__(self, x, alpha = 0.1):
@@ -200,14 +195,25 @@ class leaky_relu(Operation):
         filt[filt < 0]  = self.alpha
         return filt * grad
 
-class relu(leaky_relu):
+class Relu(Leaky_relu):
     """Computes max(0,x) element-wise.
     """
     def __init__(self, x):
         super().__init__(x,0.0)
         self.name = 'Relu'
         
+class Convolution_naive(Operation):
+    def __init__(self, x, alpha = 0.1):
+        super().__init__([x])
+        self.name = 'Convolution naive'
 
+    def compute(self, x_value):
+        pass
+    
+    def gradient(self, grad):
+        pass
+    
+    
 class Convolution(Operation):
     
     '''
@@ -265,6 +271,7 @@ class Convolution(Operation):
                                    stride)
     
       cols = x_padded[:, k, i, j]
+#      print('cols', cols.shape)
       C = x.shape[1]
       cols = cols.transpose(1, 2, 0).reshape(field_height * field_width * C, -1)
       return cols
@@ -313,15 +320,15 @@ class Convolution(Operation):
     
         grad_reshaped = grad.transpose(1, 2, 3, 0).reshape(n_filter, -1)
         dW = grad_reshaped.dot(self.X_col.T)
-        dW = dW.reshape(self.inputs[1].shape)
+        dW = dW.reshape(self.input_nodes[1].output.shape)
     
-        W_reshape = self.inputs[1].reshape(n_filter, -1)
+        W_reshape = self.input_nodes[1].output.reshape(n_filter, -1)
         dX_col = W_reshape.T @ grad_reshaped
-        dX = self.col2im_indices(dX_col, self.inputs[0].shape, self.FH, self.FW, padding=self.pad, stride=self.stride)
+        dX = self.col2im_indices(dX_col, self.input_nodes[0].output.shape, self.FH, self.FW, padding=self.pad, stride=self.stride)
     
         return [dX, dW, db]
 
-class maximum(Operation):
+class Maximum(Operation):
     def __init__(x, y):
         super().__init__([x, y])
     
@@ -329,15 +336,15 @@ class maximum(Operation):
         return np.maximum(x_value, y_value)
     
     def gradient(self, grad):
-        dx = np.zeros(self.inputs[0].shape)
-        dx[self.inputs[0]>self.inputs[1]] = 1.0
+        dx = np.zeros(self.input_nodes[0].output.shape)
+        dx[self.input_nodes[0].output>self.input_nodes[1].output] = 1.0
         dy = 1.0 - dx
         return[dx*grad, dy*grad]
 
 class Flatten(Operation):
     def __init__(self,x):
         super().__init__([x])
-        self.shape = 0
+        self.shape = None
         self.name = "Flatten"
     
     def compute(self, x_value):
@@ -357,13 +364,23 @@ class Max_pool(Operation):
     
     def gradient(self, grad):
         pass
+
+class Accuracy(Operation)   :
+    def __init__(self, x,y):
+        super().__init__([x,y])
+        self.name = "Accuracy"
     
+    def compute(self, x_value, y_value):
+        return np.sum(np.argmax(x_value, axis=1)==np.argmax(y_value, axis = 1))/x_value.shape[0]
+    
+    def gradient(self, grad):
+        pass
 '''
 Operation everloading to simplify the construction of a graph
 '''
-Node.__add__ = lambda x, y : add(x,y)
-Node.__sub__ = lambda x, y : substract(x,y)
-Node.__mul__ = lambda x, y : multiply(x,y)
-Node.__pow__ = lambda x, y : pow_op(x,y)
-Node.__neg__ = lambda x    : negative(x)
-Node.__invert__ = lambda x : inverse(x)
+Node.__add__    = lambda x, y : Add(x,y)
+Node.__sub__    = lambda x, y : Add(x,Negative(y))
+Node.__mul__    = lambda x, y : Multiply(x,y)
+Node.__pow__    = lambda x, y : Pow_op(x,y)
+Node.__neg__    = lambda x    : Negative(x)
+Node.__invert__ = lambda x    : Inverse(x)

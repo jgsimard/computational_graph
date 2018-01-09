@@ -2,14 +2,15 @@
 """
 @author: Jean-Gabriel Simard
 Contains the buiding blocks of the projects
-Graph = computational graph
-Node = node in computational graph 3 subclass
+Graph     : computational graph
+Node      : node in computational graph 3 subclass
 Operation : computational node 
-Placeholer : input node
+Placeholer: input node
 Parameter : parameter node to be tuned with gradient descent (weights)
 
 """
 import numpy as np
+
 
 class Graph:
     """Represents a computational graph
@@ -19,15 +20,21 @@ class Graph:
         self.operations   = []
         self.placeholders = []
         self.parameters   = []
-        
+
+class scope:
+    def __init__(self):
+        pass
+    
+    1324
+    
 class Node:
-    graph = Graph() #is commun to all nodes
+    graph = Graph() #is commun to all nodes, maybe not the best choice!
     
     def __init__(self):
-        self.inputs = []
         self.output = []
         self.consumers = []
         self.name = None
+
 
 class Operation(Node):
     def __init__(self,  input_nodes=[]):
@@ -87,15 +94,10 @@ class Session:
                 node.output = node.value
                 
             elif isinstance(node, Operation):
-                # Get the input values for this operation from node_values
-                node.inputs = [input_node.output for input_node in node.input_nodes]
-
-                # Compute the output of this operation
-                node.output = node.compute(*node.inputs)# * is to un
+                node.output = node.compute(*[input_node.output for input_node in node.input_nodes])# * is to unravel
 
             # Convert lists to numpy arrays
             if type(node.output) == list:
-
                 node.output = np.array(node.output)
 
         # Return the requested node value
@@ -106,10 +108,8 @@ class Session:
 
 def traverse_postorder(operations):
     """Performs a post-order traversal, returning a list of nodes
-    in the order in which they have to be computed
-
-    Args:
-       operation: The operation to start traversal at
+    in the order in which they have to be computed of the node
+    that needs the biggest graph
     """
 
     def recurse(node, list_to_fill):
