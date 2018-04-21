@@ -8,7 +8,7 @@ from core import graph, loss, layers, gradient_descent, utils, operations as op
 
 #build XOR dataset
 n_pts = 5000
-x, labels = utils.xor_dataset(n_pts, noise = 0.8)
+x, labels = utils.xor_dataset(n_pts, noise = 0.91)
 utils.plot_dataset(x,labels)
 
 #build network
@@ -17,22 +17,22 @@ n_hidden  = 50
 n_hidden2 = 50
 n_output  = 2
 
-X = graph.Placeholder(name = 'inputs') #to feed with attributes
-Y = graph.Placeholder(name = 'labels') #to feed with labels
+X = graph.Placeholder(name = 'inputs')
+Y = graph.Placeholder(name = 'labels')
 
-p_h1     = layers.fully_connected(X,    n_input,   n_hidden,  activation = 'sigmoid')
-p_h2     = layers.fully_connected(p_h1, n_hidden,  n_hidden2, activation = 'sigmoid')
+p_h1     = layers.fully_connected(X,    n_input,   n_hidden, activation='sigmoid')
+p_h2     = layers.fully_connected(p_h1, n_hidden,  n_hidden2, activation='sigmoid')
 p_output = layers.fully_connected(p_h2, n_hidden2, n_output,  activation = 'softmax')
 
 acc = op.Accuracy(p_output, Y)
 
-loss = loss.cross_entropy2(p_output,Y)
+loss = loss.cross_entropy(p_output,Y)
 
 # Mimimization algorithm
-minimization_op = gradient_descent.Momentum(loss, 0.0001, 0.8)
+minimization_op = gradient_descent.Momentum(loss, 0.0001, 0.9)
 
 #show network structure, graphviz is used
-utils.draw_graph(p_output.graph)
+#utils.draw_graph(p_output.graph)
 
 # Session = execution of computational graph
 session = graph.Session()

@@ -11,7 +11,7 @@ def compute_gradients(loss):
     grad_table = {}
     grad_table[loss] = 1
 
-    # breadth-first search, backwards from the loss
+    # BFS, backwards from the loss
     visited = set()
     queue = Queue()
     visited.add(loss)
@@ -56,6 +56,9 @@ class Gradient_Descent(Operation):
         if decay is None:
             decay = 0.9999
         self.decay = decay
+        
+    def gradient(self):
+        pass
 
 class Vanilla(Gradient_Descent):
     
@@ -89,9 +92,7 @@ class Momentum(Gradient_Descent):
             if type(node) == Parameter:
                 if node in self.past_grad:
                     self.past_grad[node] *= self.gamma
-                    self.past_grad[node] += self.learning_rate * np.mean(grad_table[node], axis = 0)
-                else:
-                    self.past_grad[node]  = self.learning_rate * np.mean(grad_table[node], axis = 0)
+                self.past_grad[node]  = self.learning_rate * np.mean(grad_table[node], axis = 0)
                 node.value -= self.past_grad[node]
         self.learning_rate *= self.decay
                 

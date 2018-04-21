@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import itertools
 import graphviz
 import core.graph as graph
+import core.operations as ope
 
 def col (offset, N, noise = 1.0):
     return noise*np.random.randn(N) + offset * np.ones((N))
@@ -73,28 +74,50 @@ def mesh(x0, x1, y0, y1):
     Y = Y.reshape((np.prod(Y.shape),))
     return np.concatenate((X[:,None],Y[:,None]), axis = 1)
 
-
-def draw_graph(g):
+def add_node(g,n):
+    if isinstance(n, graph.Placeholder):
+        g.node(str(id(n)), 'Placeholder' if n.name is None else n.name)
+        
+    if isinstance(n, graph.Parameter):
+        g.node(str(id(n)), 'Param' if n.name is None else n.name)
+        
+    if isinstance(n, graph.Operation):
+        g.node(str(id(n)), 'Operation' if n.name is None else n.name)
+        
+def add_edges_op(op,g):
+    for input_node in op.input_nodes:
+        if not isinstance(input_node,graph.Operation):
+            g.edge(str(id(input_node)), str(id(op)))    
+    for consumer in op.consumers:
+        g.edge(str(id(op)), str(id(consumer)))
+    
+def draw_graph(g, draw_clusters = True):
     dot = graphviz.Digraph(comment='Computational Graph')
+    if draw_clusters:
+        for group in g.groups:
+            with dot.subgraph(name = 'cluster_'+str(id(group))) as c:
+                c.attr(label = group.name)
+                for m in group.members:
+                    if isinstance(m, graph.Placeholder) or isinstance(m, ope.Accuracy):
+                        add_node(dot,m)
+                    else:
+                        add_node(c,m)
+        for op in g.operations:
+            add_edges_op(op,dot)
     
-    for parameter in g.parameters:
-        dot.node(str(id(parameter)), 'param' if parameter.name is None else parameter.name )
-        
-    for placeholder in g.placeholders:
-        dot.node(str(id(placeholder)), 'placeholder' if placeholder.name is None else placeholder.name )
-        
-    for op in g.operations:
-        dot.node(str(id(op)), op.name)
-        
-        for input_node in op.input_nodes:
-            if not isinstance(input_node,graph.Operation):
-                dot.edge(str(id(input_node)), str(id(op)))
-        
-        for consumer in op.consumers:
-            dot.edge(str(id(op)), str(id(consumer)))
+    else:
+        for parameter in g.parameters:
+            add_node(dot,parameter)
+                
+        for placeholder in g.placeholders:
+            add_node(dot,placeholder)
             
-    
+        for op in g.operations:
+            add_node(dot,op)
+            add_edges_op(op,dot)
+               
     dot.render('cp_graph', view=True)
+    
     
 def rel_error(x, y):
   """ returns relative error """

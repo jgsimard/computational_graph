@@ -10,7 +10,8 @@ Parameter : parameter node to be tuned with gradient descent (weights)
 
 """
 import numpy as np
-
+from copy import deepcopy
+from abc import ABCMeta, abstractmethod
 
 class Graph:
     """Represents a computational graph
@@ -20,14 +21,44 @@ class Graph:
         self.operations   = []
         self.placeholders = []
         self.parameters   = []
+        self.groups       = []
 
-class scope:
-    def __init__(self):
+class group():
+    
+    def __init__(self, name):
+        self.name = name
+        self.members = []
+        
+class scope():
+
+    def __init__(self, name, graph):
+        self.name  = name
+        self.graph = graph
+        self.graph_before = deepcopy(graph)
+        self.group = group(name)
+
+    def __enter__(self):
         pass
+
+    def __exit__(self, *args):
+#        for n in self.graph.operations or self.graph.placeholders or self.graph.parameters:
+#            if n not in self.graph_before.operations or self.graph_before.placeholders or self.graph_before.parameters:
+#                self.group.members.append(n)
+        for op in self.graph.operations:
+            if op not in self.graph_before.operations:
+                self.group.members.append(op)
+                
+        for p in self.graph.placeholders:
+            if p not in self.graph_before.placeholders:
+                self.group.members.append(p)
+                
+        for par in self.graph.parameters:
+            if par not in self.graph_before.parameters:
+                self.group.members.append(par)
+                
+        self.graph.groups.append(self.group) 
     
-    1324
-    
-class Node:
+class Node(metaclass = ABCMeta):
     graph = Graph() #is commun to all nodes, maybe not the best choice!
     
     def __init__(self):
@@ -47,8 +78,10 @@ class Operation(Node):
         self.graph.operations.append(self)
     
     #must be implemented by subclass
+    @abstractmethod
     def compute(self):
         pass
+    @abstractmethod
     def gradient(self):
         pass
      

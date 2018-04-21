@@ -13,7 +13,7 @@ onehot_encoder = OneHotEncoder(sparse=False)
 from keras.datasets import mnist
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
 #build XOR dataset
-n_pts = 5000
+n_pts = 1000
 
 x = x_train[:n_pts,:,:].reshape((n_pts,1,28,28))
 labels = onehot_encoder.fit_transform(y_train[:n_pts].reshape((-1,1)))
@@ -32,12 +32,8 @@ Y = graph.Placeholder(name = 'labels') #to feed with labels
 
 #convolutional(X, channel_in, channel_out, filter_height = 3, filter_width = 3, stride = 1, pad = 1):
 conv_1 = layers.convolutional(X,   1,   16, filter_height = 3, filter_width = 3, stride = 1, pad = 1)
-l1  = op.Sigmoid(conv_1)
-conv_2 = layers.convolutional(l1,  16,  32, filter_height = 3, filter_width = 3, stride =3, pad = 1)
-l2  = op.Sigmoid(conv_2)
-
-flat = op.Flatten(l2)
-
+conv_2 = layers.convolutional(conv_1,  16,  32, filter_height = 3, filter_width = 3, stride =3, pad = 1)
+flat = op.Flatten(conv_2)
 fc_1   = layers.fully_connected(flat,  10*10*32,  n_hidden, activation='sigmoid')
 fc_out = layers.fully_connected(fc_1,  n_hidden, n_output, activation='softmax')
 
@@ -55,7 +51,7 @@ utils.draw_graph(fc_out.graph)
 session = graph.Session()
 
 # gradient descent
-n_epochs = 5
+n_epochs = 2
 batch_size = 128
 all_loss=[]
 for step in range(n_epochs):

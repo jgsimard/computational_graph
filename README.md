@@ -25,15 +25,19 @@ This image represent the dataset used, it is a 2d dataset with two classes in a 
 ![dataset](https://user-images.githubusercontent.com/6108674/34733441-aad5b384-f568-11e7-96e2-461ee43fec9d.PNG)
 
 This image represent the graph built 
+
 ![graph](https://user-images.githubusercontent.com/6108674/34733442-aaf0e3fc-f568-11e7-88e1-7d5aa8fdaec1.PNG)
 
 This image represent the exectution of the program in the terminal
+
 ![cmd](https://user-images.githubusercontent.com/6108674/34733440-aab8071c-f568-11e7-8bfc-10d1c08d9fd7.PNG)
 
 This image represent the loss of the graph at each iteration
+
 ![loss](https://user-images.githubusercontent.com/6108674/34733444-ab06512e-f568-11e7-8f76-df068a4ce192.PNG)
 
 This image represent the resulting decision boundary
+
 ![boudary](https://user-images.githubusercontent.com/6108674/34733439-aa9dffac-f568-11e7-8fba-9d855cc708b7.PNG)
 
 
