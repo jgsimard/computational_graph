@@ -38,7 +38,8 @@ minimization_op = gradient_descent.Momentum(loss, 0.0001, 0.9)
 session = graph.Session()
 
 # gradient descent
-n_epochs = 10
+n_epochs = 100
+
 batch_size = 64
 all_loss=[]
 for step in range(n_epochs):

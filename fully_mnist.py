@@ -22,7 +22,7 @@ print(x.shape, labels.shape)
 
 #build network
 n_input   = 28*28
-n_hidden  = 400
+n_hidden  = 500
 n_output  = 10
 
 X = graph.Placeholder(name = 'inputs') #to feed with attributes
@@ -38,7 +38,7 @@ acc = op.Accuracy(p_output, Y)
 loss = loss.cross_entropy2(p_output,Y)
 
 # Mimimization algorithm
-minimization_op = gradient_descent.Momentum(loss, 0.0005, 0.9)
+minimization_op = gradient_descent.Momentum(loss, 0.0005, 0.99)
 #minimization_op = gradient_descent.Vanilla(loss, 0.0005)
 
 #show network structure, graphviz is used
@@ -48,7 +48,7 @@ minimization_op = gradient_descent.Momentum(loss, 0.0005, 0.9)
 session = graph.Session()
 
 # gradient descent
-n_epochs = 2
+n_epochs = 100
 batch_size = 64
 all_loss=[]
 for step in range(n_epochs):

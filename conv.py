@@ -6,20 +6,22 @@ Created on Sun Dec 10 02:41:51 2017
 """
 
 import numpy as np
-from core import graph, operations, utils
+from core import graph, operations, utils, convolution
 
 x_shape = (2, 3, 4, 4)
 w_shape = (3, 3, 4, 4)
 x = np.linspace(-0.1, 0.5, num=np.prod(x_shape)).reshape(x_shape)
 w = np.linspace(-0.2, 0.3, num=np.prod(w_shape)).reshape(w_shape)
-b = np.linspace(-0.1, 0.2, num=3)
-
+#b = np.linspace(-0.1, 0.2, num=3)
+b = np.linspace(0, 0, num=3)
 X = graph.Placeholder(name = 'inputs') #to feed with attributes
 W = graph.Parameter(w)
 B = graph.Parameter(b)
 
-op = operations.Convolution(X,W,B, stride = 2)
-
+stride = 2
+padding = 1
+op = convolution.Convolution(X,W,B, stride = stride)
+conv_naive_test = convolution.Convolution2DNaive(X,W, stride = stride)
 #utils.draw_graph(op.graph)
 
 correct_out = np.array([[[[-0.08759809, -0.10987781],
@@ -35,7 +37,8 @@ correct_out = np.array([[[[-0.08759809, -0.10987781],
                           [[ 2.36270298,  2.36904306],
                            [ 2.38090835,  2.38247847]]]])
 
-session = graph.Session()
-session.run(op,{X: x})
 
-print(utils.rel_error(correct_out,op.output))
+session = graph.Session()
+session.run([op, conv_naive_test],{X: x})
+
+print(utils.rel_error(conv_naive_test.output,op.output))
