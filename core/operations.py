@@ -190,8 +190,7 @@ class Leaky_relu(Operation):
         return np.maximum(x_value * self.alpha, x_value)
     
     def gradient(self, grad):
-        filt = self.output
-        filt[filt >= 0] = 1.0
+        filt = self.output[self.output >= 0]
         filt[filt < 0]  = self.alpha
         return filt * grad
 
@@ -201,20 +200,7 @@ class Relu(Leaky_relu):
     def __init__(self, x):
         super().__init__(x,0.0)
         self.name = 'Relu'
-        
-class Convolution_naive(Operation):
-    def __init__(self, x, alpha = 0.1):
-        super().__init__([x])
-        self.name = 'Convolution naive'
-
-    def compute(self, x_value):
-        pass
     
-    def gradient(self, grad):
-        pass
-    
-
-
 class Maximum(Operation):
     def __init__(x, y):
         super().__init__([x, y])
@@ -241,27 +227,6 @@ class Flatten(Operation):
     def gradient(self, grad):
         return grad.reshape(self.shape)
         
-    
-class Max_pool(Operation):
-    def __init__(x):
-        super().__init__([x])
-    
-    def compute(self, x_value):
-        pass
-    
-    def gradient(self, grad):
-        pass
-
-class Accuracy(Operation)   :
-    def __init__(self, x,y):
-        super().__init__([x,y])
-        self.name = "Accuracy"
-    
-    def compute(self, x_value, y_value):
-        return np.sum(np.argmax(x_value, axis=1)==np.argmax(y_value, axis = 1))/x_value.shape[0]
-    
-    def gradient(self, grad):
-        pass
 '''
 Operation everloading to simplify the construction of a graph
 '''

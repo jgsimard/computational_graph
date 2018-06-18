@@ -24,21 +24,21 @@ class Convolution2DNaive(Operation):
     FW width of the filter
     '''
     
-    def __init__(self, x, w, stride = 1, padding = 1):
-        super().__init__([x, w])
+    def __init__(self, x, w, b, stride = 1, padding = 1):
+        super().__init__([x, w, b])
         self.name = 'Convolution2DNaive'
         self.stride = stride
-        self.padding = padding
+        self.pad = padding
         self.x_shape = None
         
         
-    def compute(self, x_value, w_value):
+    def compute(self, x_value, w_value, b_value):
         self.x_shape = x_value.shape
         n_input,  x_c, x_h, x_w = x_value.shape
         f_n, f_c, f_h, f_w = w_value.shape
         
-        out_h = (x_h - f_h + 2 * self.padding) / self.stride + 1
-        out_w = (x_w - f_w + 2 * self.padding) / self.stride + 1
+        out_h = (x_h - f_h + 2 * self.pad) / self.S + 1
+        out_w = (x_w - f_w + 2 * self.pad) / self.S + 1
         
         assert out_h % 1.0 == 0
         assert out_w % 1.0 == 0
@@ -49,47 +49,70 @@ class Convolution2DNaive(Operation):
         out = np.zeros((n_input, f_n, out_h, out_w))
         
         x_value_padded = np.pad(x_value, 
-                                ((0,0),(0,0),(self.padding, self.padding),(self.padding, self.padding)),
+                                ((0,0),(0,0),(self.pad, self.pad),(self.pad, self.pad)),
                                 'constant', constant_values=(0))
         
-        #so many for loops --> perfect for a gpu!
-        for i in range(n_input):
-            for f_i in range(f_n):
-                for h_i in range(out_h):
-                    for w_i in range(out_w):
-                        out[i,f_i, h_i, w_i] = np.sum(x_value_padded[i,:, 
-                                                                     h_i * self.stride : h_i * self.stride + f_h,
-                                                                     w_i * self.stride : w_i * self.stride + f_w] *
-                                                      w_value[f_i,:,:,:])
+        for i in range(n_input): #item in batch
+            for f in range(f_n): # item channel
+                for h in range(0,x_h, self.stride):
+                    for w in range(0,x_w, self.stride):
+                        out[i,f,h/self.stride, w/self.stride] = ...
+                        np.sum(x_value_padded[i, :, h : h+f_h, w : w+f_w] * w_value[f,:,:,:]) + b_value[f]
+                    
         return out
-    #TODO
+
     def gradient(self, grad):
         
-        n_input,  x_c, x_h, x_w = self.x_shape
-        f_n, f_c, f_h, f_w = self.w_shape
+        n_input,  x_c, x_h, x_w = self.input_nodes[0].output.shape
+        f_n,      f_c, f_h, f_w = self.input_nodes[1].output.shape
+        N, F, out_h, out_w = grad.shape
+                
+        x_value_padded = np.pad(self.input_nodes[0].output, 
+                                ((0,0),(0,0),(self.pad, self.pad),(self.pad, self.pad)),
+                                'constant', constant_values=(0))
+        # dx
+        dx = np.zeros(x_value_padded)
+        for i in range(n_input): #item in batch
+            for f in range(f_n): # item channel
+                for h in range(0,x_h, self.stride):
+                    for w in range(0,x_w, self.stride):
+                        dx[i,:,x_h:x_h+f_h, x_w:x_w+f_w] += grad[i,f,x_h/self.stride, x_w/self.stride] * self.input_nodes[1][f,:,:,:]
+                        
+        dx = np.delete(dx, range(self.pad) + range(x_h + self.pad, x_h + 2 * self.pad, 1), axis = 2) # delete excess rows
+        dx = np.delete(dx, range(self.pad) + range(x_w + self.pad, x_w + 2 * self.pad, 1), axis = 3) # delete excess cols
+        
+        #dw
+        dw = np.zeros(self.input_nodes[1].output.shape)
+        for i in range(n_input): #item in batch
+            for f in range(f_n): # item channel
+                for h in range(0, out_h):
+                    for w in range(0, out_w):
+                        dw[f,:,:,:] += grad[i,f,h,w] * x_value_padded[i, :, h*self.stride:h*self.stride + f_h, w*self.stride:w*self.stride + f_w]
+                        
+        #db
+        db = np.zeros(self.input_nodes[2].output.shape)
+        for f in range(f_n):
+            db[f] = np.sum(grad[:,f,:,:])
+        
+        return [dx, dw, db]
+        
 
-        out_x = np.zeros(self.x_shape)
-        
-        
-        out_w = np.zeros((n_input, f_n, f_c, f_h, f_w))
-        for i in range(n_input):
-            for f_i in range(f_n):
-                for c_i in range(f_c):
-                    for h_i in range(f_h):
-                        for w_i in range(f_w):
-                            out_w[i,f_i, c_i, h_i, w_i] = np.sum(grad[i,  f_i, h_i : h_i + f_h, w_i : w_i + f_w ] *
-                                                                 self.x_value_padded[:])
-                                                                 
-        
-        return []
+class im2col (Operation):
+    
+    def __init__(self, x), stride = 1, padding = 1:
+        super().__init__([x])
+        self.name = "im2col"
+    
+    def compute (self, x_value):
+        n_input,  x_c, x_h, x_w = x_value.shape
+        f_n, f_c, f_h, f_w = w_value.shape
+    
+    def gradient(self, grad):
         pass
-class Convolution1DNaive(Operation):
-    def __init__(self, x, weights):
-        super().__init__([x, weights])
-        self.name = 'Convolution2DNaive'
-        
-        
-#this is from the internet, i did not write this
+
+class Convolution2D(Operation):
+        pass
+
 class Convolution(Operation):
     
     def __init__(self,x, W, b, stride = 1, padding = 1):
